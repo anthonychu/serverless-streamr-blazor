@@ -1,0 +1,28 @@
+﻿@page "/"
+
+<h1>@message</h1>
+
+@code {
+    private static Action<string, string> updateMessage;
+    private string message = "Waiting";
+
+    protected override void OnInitialized()
+    {
+        updateMessage = UpdateMessage;
+    }
+
+    private void UpdateMessage(string username, string time)
+    {
+        message = $"{username} {time}";
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public static void UpdateMessageCaller(string username, string time)
+    {
+        if (updateMessage != null)
+        {
+            updateMessage.Invoke(username, time);
+        }
+    }
+}
