@@ -1,28 +1,57 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject IJSRuntime JSRuntime;
 
-<h1>@message</h1>
+<pre>@asciiVideo</pre>
+
+@if (videoStarted)
+{
+    <button type="button" class="btn btn-primary" @onclick="StopVideo">Stop</button>
+}
+else
+{
+    <button type="button" class="btn btn-primary" @onclick="StartVideo" >Start</button>
+}
+<canvas id="myCanvas"></canvas>
 
 @code {
-    private static Action<string, string> updateMessage;
-    private string message = "Waiting";
+    private static Action<string> updateAsciiVideo;
+    private string asciiVideo = ":)";
+    private bool videoStarted = false;
+    private HubConnection hubConnection;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        updateMessage = UpdateMessage;
+        updateAsciiVideo = (asciiString) => {
+            asciiVideo = asciiString;
+            StateHasChanged();
+        };
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("http://localhost:7071/api")
+            .WithAutomaticReconnect()
+            .Build();
+            
+        await hubConnection.StartAsync();
     }
 
-    private void UpdateMessage(string username, string time)
+    private async Task StartVideo()
     {
-        message = $"{username} {time}";
-        StateHasChanged();
+        await JSRuntime.InvokeVoidAsync("start", 80, 45, 4);
+        videoStarted = true;
+    }
+
+    private async Task StopVideo()
+    {
+        await JSRuntime.InvokeVoidAsync("location.reload");
     }
 
     [JSInvokable]
-    public static void UpdateMessageCaller(string username, string time)
+    public static void UpdateAsciiVideo(string asciiString)
     {
-        if (updateMessage != null)
+        if (updateAsciiVideo != null)
         {
-            updateMessage.Invoke(username, time);
+            updateAsciiVideo.Invoke(asciiString);
         }
     }
 }

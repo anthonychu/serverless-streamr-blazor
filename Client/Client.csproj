@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.0-rc.1.20451.17" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.0-rc.1.20451.17" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.0-rtm.20502.15" />
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0-rc.1.20451.14" />
   </ItemGroup>
 

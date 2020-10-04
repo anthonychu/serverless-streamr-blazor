@@ -2,32 +2,61 @@
 <html>
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Client</title>
-    <base href="/" />
-    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
-    <link href="css/app.css" rel="stylesheet" />
-    <link href="_framework/scoped.styles.css" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Client</title>
+  <base href="/" />
+  <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+  <link href="css/app.css" rel="stylesheet" />
+  <link href="_framework/scoped.styles.css" rel="stylesheet" />
 </head>
 
 <body>
-    <div id="app">Loading...</div>
+  <div id="app">Loading...</div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
-    </div>
-    <script src="_framework/blazor.webassembly.js"></script>
-    <script>
-        const name = "test";
-        setInterval(() => {
-            const time = new Date().toString();
-            console.log(time);
-            DotNet.invokeMethodAsync('Client', 'UpdateMessageCaller', name, time);
-        }, 1000);
-    </script>
+  <div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+  </div>
+  <script src="_framework/blazor.webassembly.js"></script>
+  <script src="js/ascii.js"></script>
+  <script src="js/camera.js"></script>
+  <script>
+    let isStreaming = false
+
+    async function start(width, height, fps) {
+      if (isStreaming) {
+        camera.stop()
+        isStreaming = false
+        return
+      }
+      camera.init({
+        width,
+        height,
+        fps,
+        mirror: true,
+        targetCanvas: document.getElementById('myCanvas'),
+
+        onFrame: function (canvas) {
+          ascii.fromCanvas(canvas, {
+            contrast: 170,
+            callback: function (asciiString) {
+              DotNet.invokeMethodAsync('Client', 'UpdateAsciiVideo', asciiString);
+            }
+          })
+        },
+
+        onSuccess: function () {
+          isStreaming = true
+        },
+
+        onError: function (error) {
+          console.log(error)
+        }
+      })
+    }
+  </script>
 </body>
 
 </html>
