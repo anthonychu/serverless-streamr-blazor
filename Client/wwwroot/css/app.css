@@ -14,6 +14,19 @@ a, .btn-link {
     border-color: #1861ac;
 }
 
+.user-video {
+    display: inline-block;
+    margin: 10px;
+    text-align: center;
+    width: 425px;
+    height: 350px;
+    vertical-align: top;
+}
+
+    .user-video pre {
+        font-size: 8px;
+    }
+
 app {
     position: relative;
     display: flex;

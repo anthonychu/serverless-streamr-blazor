@@ -1,36 +1,63 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client;
+@using System.Threading;
 @using ServerlessStreamR.Shared;
+@using ServerlessStreamR.Client.Models;
 @inject IJSRuntime JSRuntime;
 @inject NavigationManager NavManager;
 @inject HttpClient Http;
 
-<pre>@asciiVideo</pre>
-<pre>@otherVideo</pre>
+<div class="user-video">
+    <pre>@asciiVideo</pre>
+    @if (IsLoggedIn)
+    {
+        @username @:&nbsp;
+        @if (videoStarted)
+        {
+            <button type="button" class="btn btn-primary" @onclick="StopVideo">Stop</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary" @onclick="StartVideo" >Start</button>
+        }
+    }
+    else
+    {
+        <button type="button" class="btn btn-primary" @onclick="Login" >Login</button>
+    }
+</div>
+
+@foreach (var video in otherVideos)
+{
+    <div class="user-video">
+        <pre>@video.Frame.Ascii</pre>
+        @video.Frame.Username
+    </div>
+}
 
 
-@if (videoStarted)
-{
-    <button type="button" class="btn btn-primary" @onclick="StopVideo">Stop</button>
-}
-else
-{
-    <button type="button" class="btn btn-primary" @onclick="StartVideo" >Start</button>
-}
 <canvas id="myCanvas"></canvas>
 
 @code {
     private static Func<string, Task> updateAsciiVideo;
-    private string asciiVideo = ":)";
-    private string otherVideo = ":)";
+    private string asciiVideo = "";
+    private IList<UserVideo> otherVideos = new List<UserVideo>();
     private bool videoStarted = false;
     private HubConnection hubConnection;
     private string apiBaseUrl = "";
     private string clientId = Guid.NewGuid().ToString();
+    private string username = "";
+    private Timer timer;
+
+    private bool IsLoggedIn
+    {
+        get => !string.IsNullOrEmpty(username);
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        apiBaseUrl = NavManager.BaseUri.Contains("localhost") ? "http://localhost:7071/" : NavManager.BaseUri;
+        var isLocal = NavManager.BaseUri.Contains("localhost");
+        apiBaseUrl = isLocal ? "http://localhost:7071/" : NavManager.BaseUri;
 
         hubConnection = new HubConnectionBuilder()
             .WithUrl($"{apiBaseUrl}api")
@@ -39,7 +66,16 @@ else
 
         hubConnection.On<Frame>("newFrame", (frame) =>
         {
-            otherVideo = frame.Ascii;
+            if (frame.ClientId == clientId) return;
+
+            var userVideo = otherVideos.FirstOrDefault(v => v.Frame.ClientId == frame.ClientId);
+            if (userVideo == null)
+            {
+                userVideo = new UserVideo();
+                otherVideos.Add(userVideo);
+            }
+            userVideo.Frame = frame;
+            StateHasChanged();
         });
 
         await hubConnection.StartAsync();
@@ -56,6 +92,36 @@ else
             };
             await Http.PostAsJsonAsync($"{apiBaseUrl}api/sendframe", frame);
         };
+
+        if (isLocal)
+        {
+            username = "test-user";
+        }
+        else
+        {
+            try
+            {
+                var userInfo = await Http.GetFromJsonAsync<UserInformation>("/.auth/me");
+                username = userInfo.UserDetails;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            
+        }
+
+        timer = new Timer((_) => {
+            for (var i = otherVideos.Count - 1; i >= 0; i--)
+            {
+                var video = otherVideos[i];
+                if (DateTime.Now - video.LastUpdated > TimeSpan.FromSeconds(4))
+                {
+                    otherVideos.Remove(video);
+                }
+            }
+            StateHasChanged();
+        }, null, 0, 5000);
     }
 
     private async Task StartVideo()
@@ -67,6 +133,11 @@ else
     private async Task StopVideo()
     {
         await JSRuntime.InvokeVoidAsync("location.reload");
+    }
+
+    private void Login()
+    {
+        NavManager.NavigateTo("/.auth/login/github");
     }
 
     [JSInvokable]
