@@ -1,8 +1,13 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client;
+@using ServerlessStreamR.Shared;
 @inject IJSRuntime JSRuntime;
+@inject NavigationManager NavManager;
+@inject HttpClient Http;
 
 <pre>@asciiVideo</pre>
+<pre>@otherVideo</pre>
+
 
 @if (videoStarted)
 {
@@ -15,24 +20,42 @@ else
 <canvas id="myCanvas"></canvas>
 
 @code {
-    private static Action<string> updateAsciiVideo;
+    private static Func<string, Task> updateAsciiVideo;
     private string asciiVideo = ":)";
+    private string otherVideo = ":)";
     private bool videoStarted = false;
     private HubConnection hubConnection;
+    private string apiBaseUrl = "";
+    private string clientId = Guid.NewGuid().ToString();
 
     protected override async Task OnInitializedAsync()
     {
-        updateAsciiVideo = (asciiString) => {
-            asciiVideo = asciiString;
-            StateHasChanged();
-        };
+        apiBaseUrl = NavManager.BaseUri.Contains("localhost") ? "http://localhost:7071/" : NavManager.BaseUri;
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("http://localhost:7071/api")
+            .WithUrl($"{apiBaseUrl}api")
             .WithAutomaticReconnect()
             .Build();
-            
+
+        hubConnection.On<Frame>("newFrame", (frame) =>
+        {
+            otherVideo = frame.Ascii;
+        });
+
         await hubConnection.StartAsync();
+
+        updateAsciiVideo = async (asciiString) =>
+        {
+            asciiVideo = asciiString;
+            StateHasChanged();
+
+            var frame = new Frame
+            {
+                ClientId = clientId,
+                Ascii = asciiString
+            };
+            await Http.PostAsJsonAsync($"{apiBaseUrl}api/sendframe", frame);
+        };
     }
 
     private async Task StartVideo()
@@ -47,11 +70,11 @@ else
     }
 
     [JSInvokable]
-    public static void UpdateAsciiVideo(string asciiString)
+    public static async Task UpdateAsciiVideo(string asciiString)
     {
         if (updateAsciiVideo != null)
         {
-            updateAsciiVideo.Invoke(asciiString);
+            await updateAsciiVideo.Invoke(asciiString);
         }
     }
 }
