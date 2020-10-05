@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client;
+@using System.Text.Json;
 @using System.Threading;
 @using ServerlessStreamR.Shared;
 @using ServerlessStreamR.Client.Models;
@@ -101,8 +102,12 @@
         {
             try
             {
-                var userInfo = await Http.GetFromJsonAsync<UserInformation>("/.auth/me");
+                var userInfo = await Http.GetFromJsonAsync<UserInformation>("/.auth/me", new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
                 username = userInfo.UserDetails;
+                Console.WriteLine($"username: {username}");
             }
             catch (Exception ex)
             {
@@ -122,8 +127,6 @@
             }
             StateHasChanged();
         }, null, 0, 5000);
-
-        StateHasChanged();
     }
 
     private async Task StartVideo()
