@@ -122,6 +122,8 @@
             }
             StateHasChanged();
         }, null, 0, 5000);
+
+        StateHasChanged();
     }
 
     private async Task StartVideo()
@@ -137,7 +139,7 @@
 
     private void Login()
     {
-        NavManager.NavigateTo("/.auth/login/github");
+        NavManager.NavigateTo("/.auth/login/github", forceLoad: true);
     }
 
     [JSInvokable]
