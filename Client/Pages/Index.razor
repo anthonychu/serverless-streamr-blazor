@@ -8,37 +8,42 @@
 @inject NavigationManager NavManager;
 @inject HttpClient Http;
 
-<div class="user-video">
-    <pre>@asciiVideo</pre>
-    @if (IsLoggedIn)
-    {
-        @username @:&nbsp;
-        @if (videoStarted)
+<div class="video-content">
+    <div class="user-video">
+        <pre>@asciiVideo</pre>
+        @if (IsLoggedIn)
         {
-            <button type="button" class="btn btn-primary" @onclick="StopVideo">Stop</button>
+            @username @:&nbsp;
+            @if (videoStarted)
+            {
+                <button type="button" class="btn btn-primary" @onclick="StopVideo">Stop</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary" @onclick="StartVideo" >Start</button>
+                <button type="button" class="btn" @onclick="Logout" >Logout</button>
+            }
         }
         else
         {
-            <button type="button" class="btn btn-primary" @onclick="StartVideo" >Start</button>
-            <button type="button" class="btn" @onclick="Logout" >Logout</button>
+            <button type="button" class="btn btn-primary" @onclick="Login" >Login</button>
         }
-    }
-    else
+    </div>
+
+    @foreach (var video in otherVideos)
     {
-        <button type="button" class="btn btn-primary" @onclick="Login" >Login</button>
+        <div class="user-video">
+            <pre>@video.Frame.Ascii</pre>
+            @video.Frame.Username
+        </div>
     }
 </div>
 
-@foreach (var video in otherVideos)
-{
-    <div class="user-video">
-        <pre>@video.Frame.Ascii</pre>
-        @video.Frame.Username
-    </div>
-}
-
-
-<canvas id="myCanvas"></canvas>
+<footer class="footer">
+    <hr />
+    <span class="text-secondary">Powered by Blazor, Azure Static Web Apps, Azure SignalR Service (.NET Version @Environment.Version.ToString())</span>
+    <canvas id="myCanvas"></canvas>
+</footer>
 
 @code {
     private static Func<string, Task> updateAsciiVideo;
