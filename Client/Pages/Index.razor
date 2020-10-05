@@ -106,7 +106,7 @@
                 {
                     PropertyNameCaseInsensitive = true
                 });
-                username = userInfo.UserDetails;
+                username = userInfo.ClientPrincipal.UserDetails;
                 Console.WriteLine($"username: {username}");
             }
             catch (Exception ex)
