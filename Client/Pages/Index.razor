@@ -20,6 +20,7 @@
         else
         {
             <button type="button" class="btn btn-primary" @onclick="StartVideo" >Start</button>
+            <button type="button" class="btn" @onclick="Logout" >Logout</button>
         }
     }
     else
@@ -142,7 +143,12 @@
 
     private void Login()
     {
-        NavManager.NavigateTo("/.auth/login/github", forceLoad: true);
+        NavManager.NavigateTo("/.auth/login/github?post_login_redirect_uri=/", forceLoad: true);
+    }
+
+    private void Logout()
+    {
+        NavManager.NavigateTo("/.auth/logout", forceLoad: true);
     }
 
     [JSInvokable]
